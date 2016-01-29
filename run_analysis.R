@@ -25,11 +25,19 @@ run_analysis <-function(){
   combinedTable = rbind(testTable,trainTable)
   
   notActivityNorSubject = !(names(combinedTable) %in% c("activity", "subject")) 
-  ##Calculate averages of each varianle for each activity
-  byActivityTable = apply(combinedTable[,notActivityNorSubject],2,function(a){tapply(a,combinedTable$activity,mean)})
-  ##Calculate averages of each varianle for each subject
-  bySubjectTable = apply(combinedTable[,notActivityNorSubject],2,function(a){tapply(a,combinedTable$subject,mean)})
   
-  ##return data set and calculated averages
-  list(combinedTable,byActivityTable,bySubjectTable)
+  ##split data for each activity and then take averages for each subject
+  temp <- split(combinedTable,combinedTable$activity)
+  temp <- lapply(temp,
+                  function(a){atemp<-apply(a[,notActivityNorSubject],2,
+                    function(b){ 
+                      btemp <- tapply(b,a$subject,mean)
+                      names(btemp)<-paste0(a$activity[1],":",1:30)
+                      return(btemp)
+                    })
+                    return(atemp)
+                  })
+  ##recombine data
+  do.call("rbind",temp)
+  
 }
