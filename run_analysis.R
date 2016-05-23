@@ -27,17 +27,18 @@ run_analysis <-function(){
   notActivityNorSubject = !(names(combinedTable) %in% c("activity", "subject")) 
   
   ##split data for each activity and then take averages for each subject
-  temp <- split(combinedTable,combinedTable$activity)
-  temp <- lapply(temp,
-                  function(a){atemp<-apply(a[,notActivityNorSubject],2,
-                    function(b){ 
-                      btemp <- tapply(b,a$subject,mean)
-                      names(btemp)<-paste0(a$activity[1],":",1:30)
-                      return(btemp)
-                    })
-                    return(atemp)
-                  })
-  ##recombine data
-  do.call("rbind",temp)
+  activitylist <- by(combinedTable,combinedTable$activity, function(activity){
+    subjectlist <- by(activity,activity$subject,function(subject){
+      temp <- apply(subject[,notActivityNorSubject],2,function(variable){mean(variable)})
+      c(Subject = subject[1,"subject"],Activity = subject[1,"activity"],temp)
+    })
+    do.call("rbind",subjectlist)
+  })
+  result<-do.call("rbind",activitylist)
+  names<-gsub('"',"",colnames(result),fixed = TRUE)
+  names<-gsub('()',"",names,fixed = TRUE)
+  names<-gsub('-',"_",names,fixed = TRUE)
+  colnames(result)<-names
+  return(result)
   
 }
